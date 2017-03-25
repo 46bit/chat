@@ -1,0 +1,18 @@
+[package]
+name = "chat"
+version = "0.1.0"
+authors = ["Michael Mokrysz <hi@46b.it>"]
+
+[dependencies]
+futures = "0.1"
+tokio-core = "0.1"
+tokio-io = "0.1"
+bytes = "0.4"
+comms = { git = "https://github.com/sirpent-team/comms", branch = "master" }
+
+[replace]
+"futures:0.1.11" = { git = "https://github.com/sirpent-team/futures-rs", branch = "master2" }
+
+[[bin]]
+name = "chat"
+path = "src/chat.rs"
