@@ -6,6 +6,8 @@ Multiple clients connect over TCP and type to each other.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/I2j2aLBo2Es" frameborder="0" allowfullscreen></iframe>
 
+[![Demo of comms-chat](https://img.youtube.com/vi/I2j2aLBo2Es/0.jpg)](https://www.youtube.com/watch?v=I2j2aLBo2Es)
+
 ## Running
 
 You'll need Rust and to clone this repo. Then run `cargo run` and you should see the server build and start up.
