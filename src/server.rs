@@ -18,6 +18,27 @@ impl ChatServer {
             clients: Room::default(),
         }
     }
+
+    fn start_broadcast(&mut self, from_id: u64, msg: String) {
+        // Broadcast this received message to all other clients.
+        for to_id in self.clients.ids() {
+            if to_id == from_id {
+                continue;
+            }
+            match self.clients.start_send((to_id, msg.clone())) {
+                Ok(AsyncSink::Ready) => {}
+                Ok(AsyncSink::NotReady((to_id, msg))) => {
+                    // No buffering is performed inside `Room` or `Client`.
+                    println!("Dropped message. to_id={:?} msg={:?}", to_id, msg);
+                }
+                Err(e) => {
+                    // Room's impl on Sink returns non-fatal errors. These indicate
+                    // a client disconnection, or an unknown client ID.
+                    println!("Client Room Sink start_send error:\n    {:?}", e);
+                }
+            }
+        }
+    }
 }
 
 impl Future for ChatServer {
@@ -44,36 +65,19 @@ impl Future for ChatServer {
             Err(e) => return Err(format!("Incoming tcp client Stream error: {:?}", e)),
         }
 
+        // We have to read from the Stream until it is empty.
         loop {
-            let mut rcvd = None;
             match self.clients.poll() {
                 Ok(Async::NotReady) => break,
                 Ok(Async::Ready(Some((id, msg)))) => {
-                    rcvd = Some((id, msg));
+                    println!("Broadcasting message from {:?}:\n    {:?}",
+                             id.clone(),
+                             msg.clone());
+                    self.start_broadcast(id, msg);
                 }
                 Ok(Async::Ready(None)) => return Err("Client Room Stream poll died.".to_string()),
                 Err(e) => {
                     println!("Client Room Stream error:\n    {:?}", e);
-                }
-            }
-            if let Some((id, msg)) = rcvd {
-                // Broadcast this received message to all other clients.
-                for to_id in self.clients.ids() {
-                    if id == to_id {
-                        continue;
-                    }
-                    match self.clients.start_send((to_id, msg.clone())) {
-                        Ok(AsyncSink::Ready) => {}
-                        Ok(AsyncSink::NotReady((to_id, msg))) => {
-                            // No buffering is performed inside `Room` or `Client`.
-                            println!("Dropped message. to_id={:?} msg={:?}", to_id, msg);
-                        }
-                        Err(e) => {
-                            // Room's impl on Sink returns non-fatal errors. These indicate
-                            // a client disconnection, or an unknown client ID.
-                            println!("Client Room Sink start_send error:\n    {:?}", e);
-                        }
-                    }
                 }
             }
         }
